@@ -11,6 +11,7 @@ import warnings
 from TB2J.mathutils.fermi import fermi
 import time
 from tqdm import tqdm 
+#from multiprocessing import Pool
 MAX_EXP_ARGUMENT = np.log(sys.float_info.max)
 
 
@@ -130,15 +131,17 @@ class TBGreen:
         else:
             self.S = None
         if self.nproc == 1:
-            results = map(self.tbmodel.HSE_k, self.kpts)
+            results = tqdm(map(self.tbmodel.HSE_k, self.kpts), total = nkpts)
         else:
+            #with Pool(processes = self.nproc) as executor:
+            #    results = tqdm(executor.imap_unordered(self.tbmodel.HSE_k, self.kpts), total=len(self.kpts))
             executor = ProcessPool(nodes=self.nproc)
             results = executor.map(self.tbmodel.HSE_k, self.kpts, [2] * len(self.kpts))
             executor.close()
             executor.join()
             executor.clear()
 
-        for ik, result in tqdm(enumerate(results), total = nkpts):
+        for ik, result in enumerate(results):
             if self.is_orthogonal:
                 self.H[ik], _, self.evals[ik], self.evecs[ik] = result
             else:
