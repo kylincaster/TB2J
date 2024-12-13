@@ -9,7 +9,8 @@ import sys
 import pickle
 import warnings
 from TB2J.mathutils.fermi import fermi
-
+import time
+from tqdm import tqdm 
 MAX_EXP_ARGUMENT = np.log(sys.float_info.max)
 
 
@@ -58,6 +59,7 @@ class TBGreen:
         :param kmesh: size of monkhorst pack. e.g [6,6,6]
         :param efermi: fermi energy.
         """
+        t0 = time.time()
         self.tbmodel = tbmodel
         self.is_orthogonal = tbmodel.is_orthogonal
         self.R2kfactor = tbmodel.R2kfactor
@@ -78,6 +80,7 @@ class TBGreen:
         self.k_sym = k_sym
         self.nproc = nproc
         self._prepare_eigen()
+        print(f"TBGreen init. time {time.time()-t0:.3f}s")
 
     def _reduce_eigens(self, evals, evecs, emin, emax):
         ts = np.logical_and(evals >= emin, evals < emax)
@@ -135,7 +138,7 @@ class TBGreen:
             executor.join()
             executor.clear()
 
-        for ik, result in enumerate(results):
+        for ik, result in tqdm(enumerate(results), total = nkpts):
             if self.is_orthogonal:
                 self.H[ik], _, self.evals[ik], self.evecs[ik] = result
             else:
